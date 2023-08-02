@@ -1,0 +1,49 @@
+$ clickhouse client
+ClickHouse client version 23.6.2.18 (official build).
+Connecting to localhost:9000 as user admin.
+Connected to ClickHouse server version 23.6.2 revision 54464.
+
+Warnings:
+ * Linux is not using a fast clock source. Performance can be degraded. Check /sys/devices/system/clocksource/clocksource0/current_clocksource
+ * Effective user of the process (1001) does not match the owner of the data (clickhouse).
+
+
+
+3c84bb632165 :) SELECT vs.report_time AS last_report_time, vs.status, vs.vehicle_id, od.detection_time, od.detections FROM ( select report_time, status, vehicle_id from( select report_time, status, vehicle_id, rank() OVER (PARTITION BY vehicle_id ORDER BY report_time DESC) AS time_rank from mobileye.vehicles_status ) as sort_vs where sort_vs.time_rank = 1 ) as vs ASOF LEFT JOIN mobileye.objects_detection od ON vs.vehicle_id = od.vehicle_id AND vs.report_time >= od.detection_time
+
+SELECT
+    vs.report_time AS last_report_time,
+    vs.status,
+    vs.vehicle_id,
+    od.detection_time,
+    od.detections
+FROM
+(
+    SELECT
+        report_time,
+        status,
+        vehicle_id
+    FROM
+    (
+        SELECT
+            report_time,
+            status,
+            vehicle_id,
+            rank() OVER (PARTITION BY vehicle_id ORDER BY report_time DESC) AS time_rank
+        FROM mobileye.vehicles_status
+    ) AS sort_vs
+    WHERE sort_vs.time_rank = 1
+) AS vs
+ASOF LEFT JOIN mobileye.objects_detection AS od ON (vs.vehicle_id = od.vehicle_id) AND (vs.report_time >= od.detection_time)
+
+Query id: 125cd443-da28-40d2-aca3-1856b01cf5e6
+
+┌────last_report_time─┬─status──┬─vehicle_id───────────────────────┬──────detection_time─┬─detections────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ 2022-05-31 08:19:26 │ parking │ 0a5e3c102ec811eebe560242ac120002 │ 2022-05-03 17:07:10 │ ['{"object_type":"cars","object_value":8}','{"object_type":"pedestrians","object_value":10}','{"object_type":"pedestrians","object_value":7}']                                                                                    │
+│ 2022-05-29 14:04:23 │ parking │ 2821a20a2ec811eebe560242ac120002 │ 2022-05-25 04:51:39 │ ['{"object_type":"trucks","object_value":10}','{"object_type":"pedestrians","object_value":4}','{"object_type":"trucks","object_value":2}','{"object_type":"cars","object_value":9}','{"object_type":"trucks","object_value":8}'] │
+│ 2022-05-30 19:58:17 │ parking │ 318713c02ec811eebe560242ac120002 │ 2022-05-30 03:28:28 │ ['{"object_type":"trucks","object_value":6}']                                                                                                                                                                                     │
+└─────────────────────┴─────────┴──────────────────────────────────┴─────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+3 rows in set. Elapsed: 0.010 sec. 
+
+3c84bb632165 :) 

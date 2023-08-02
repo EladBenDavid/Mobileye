@@ -1,0 +1,30 @@
+version: '3'
+services:
+  # Service for the main application
+  app:
+    image: mobileye:latest
+    container_name: app
+    # Depends on the 'clickhouse' service, meaning 'clickhouse' will start before 'app'.
+    depends_on:
+      - clickhouse
+    # Maps the host's 'host.docker.internal' to the container's 'host-gateway'.
+    # This allows the 'app' container to access services on the host machine.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Always restart the 'app' container if it exits unexpectedly.
+    restart: always
+
+  # Service for ClickHouse database
+  clickhouse:
+    image: bitnami/clickhouse:23
+    container_name: clickhouse
+    # Maps ports from the host machine to the container.
+    ports:
+      - "8123:8123" # HTTP port
+      - "9000:9000" # Native client port
+    # Set environment variables for ClickHouse configuration.
+    environment:
+      - CLICKHOUSE_USER=admin
+      - CLICKHOUSE_PASSWORD=1234
+    # Always restart the 'clickhouse' container if it exits unexpectedly.
+    restart: always
